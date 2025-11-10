@@ -1,0 +1,344 @@
+/**
+ * Photo Site Builder Pro - Main Styles
+ * Application interface styling
+ */
+
+/* Reset e Base */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f5f5f5;
+    overflow: hidden;
+}
+
+/* Layout principale */
+.container {
+    display: flex;
+    height: 100vh;
+}
+
+.editor {
+    flex: 1;
+    overflow: hidden;
+    background: #f5f5f5;
+}
+
+.panel {
+    width: 420px;
+    background: #fff;
+    overflow-y: auto;
+    box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+}
+
+.panel-header {
+    padding: 20px;
+    border-bottom: 1px solid #eee;
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 10;
+}
+
+/* Buttons */
+.button-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.button-group button {
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #fff;
+    font-weight: bold;
+    font-size: 0.85em;
+    transition: opacity 0.2s;
+}
+
+.button-group button:hover {
+    opacity: 0.9;
+}
+
+.btn-save {
+    background: #4CAF50;
+}
+
+.btn-load {
+    background: #2196F3;
+}
+
+.btn-export {
+    background: #ff9800;
+    grid-column: 1 / -1;
+}
+
+.button-primary {
+    width: 100%;
+    padding: 12px;
+    background: #1a1a1a;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-bottom: 10px;
+    font-weight: bold;
+    transition: background 0.2s;
+}
+
+.button-primary:hover {
+    background: #333;
+}
+
+.button-delete {
+    width: 100%;
+    padding: 8px;
+    background: #f44336;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.button-delete:hover {
+    background: #d32f2f;
+}
+
+/* Tabs */
+.tabs {
+    display: flex;
+    gap: 8px;
+    border-bottom: 1px solid #eee;
+    flex-wrap: wrap;
+}
+
+.tab {
+    padding: 8px 12px;
+    background: #f0f0f0;
+    border: none;
+    border-radius: 4px 4px 0 0;
+    cursor: pointer;
+    font-size: 0.85em;
+    transition: all 0.2s;
+}
+
+.tab:hover {
+    background: #e0e0e0;
+}
+
+.tab.active {
+    background: #1a1a1a;
+    color: #fff;
+}
+
+.panel-content {
+    padding: 20px;
+}
+
+.section {
+    display: none;
+}
+
+.section.active {
+    display: block;
+}
+
+/* Form elements */
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    font-size: 0.9em;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 0.95em;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #2196F3;
+}
+
+.slider-group {
+    margin-bottom: 15px;
+}
+
+.slider-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    font-size: 0.9em;
+}
+
+.slider-group input[type="range"] {
+    width: 100%;
+}
+
+/* Info panels */
+.info-panel {
+    background: #f0f8ff;
+    padding: 15px;
+    border-left: 4px solid #2196F3;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+.success-panel {
+    background: #f0fff0;
+    padding: 15px;
+    border-left: 4px solid #4CAF50;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+/* Hidden file inputs */
+#photoInput,
+#loadInput,
+#headerImageInput,
+#headerImageLinkInput,
+#pageImageInput,
+#pageElementImageInput,
+#pageImageLinkInput {
+    display: none;
+}
+
+/* Page and header items */
+.page-item,
+.header-item {
+    background: #f9f9f9;
+    padding: 12px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+    border-left: 4px solid #ff6b6b;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.2s;
+}
+
+.page-item:hover,
+.header-item:hover {
+    background: #fff3f3;
+}
+
+.page-item.hidden,
+.header-item.hidden {
+    opacity: 0.5;
+}
+
+.page-item-name {
+    flex: 1;
+    font-weight: 500;
+}
+
+.page-item-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 3px;
+    font-size: 1.1em;
+    transition: background 0.2s;
+}
+
+.icon-btn:hover {
+    background: rgba(0,0,0,0.1);
+}
+
+.icon-btn.danger:hover {
+    background: #f44336;
+    color: white;
+}
+
+.sub-page {
+    margin-left: 30px;
+    border-left-color: #9c27b0;
+    font-size: 0.9em;
+}
+
+.drag-handle {
+    cursor: grab;
+    font-size: 1.2em;
+    color: #999;
+    margin-right: 10px;
+}
+
+.header-item {
+    border-left-color: #2196F3;
+}
+
+/* Welcome message */
+.welcome-message {
+    text-align: center;
+    padding: 60px 20px;
+    color: #666;
+}
+
+.welcome-message h2 {
+    margin-bottom: 20px;
+    color: #1a1a1a;
+}
+
+.welcome-message p {
+    margin-bottom: 10px;
+}
+
+/* Progress bar */
+.progress-bar {
+    width: 100%;
+    height: 30px;
+    background: #f0f0f0;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 10px;
+    display: none;
+}
+
+.progress-fill {
+    height: 100%;
+    background: #4CAF50;
+    transition: width 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 0.85em;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .panel {
+        width: 100%;
+        max-width: 350px;
+    }
+}
