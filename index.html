@@ -206,16 +206,16 @@
                         <div class="form-group" style="margin-bottom: 15px;">
                             <label>📐 Modalità Layout:</label>
                             <select id="layoutModeSelect" onchange="changeLayoutMode()">
-                                <option value="default">Con Header e Struttura</option>
-                                <option value="blank">Completamente Vuota</option>
+                                <option value="default">Con Struttura (titolo + canvas)</option>
+                                <option value="blank">Canvas Libero (solo canvas)</option>
                             </select>
                         </div>
                         
                         <div class="info-panel" style="margin-bottom: 15px; border-left-color: #2196F3;">
                             <strong>ℹ️ Modalità Layout</strong><br>
                             <span id="layoutModeInfo">
-                                <strong>Con Header:</strong> Header del sito + titolo pagina + canvas<br>
-                                <strong>Vuota:</strong> Solo canvas, aggiungi elementi ovunque!
+                                <strong>Con Struttura:</strong> Header globale + titolo pagina + canvas<br>
+                                <strong>Vuota:</strong> Header globale + canvas libero (no titolo pagina)
                             </span>
                         </div>
                         
@@ -1938,7 +1938,7 @@ Data: ${new Date().toLocaleDateString('it-IT')}
             updatePreview();
             
             if (page.layoutMode === 'blank') {
-                alert('✅ Modalità Vuota attivata!\n\nOra hai un canvas completamente libero.\nUsa "📝 Testo Libero" e "🖼️ Immagine Libera" per aggiungere elementi ovunque!');
+                alert('✅ Modalità Canvas Libero attivata!\n\n📍 L\'header globale resta visibile\n📍 Il titolo della pagina è nascosto\n📍 Canvas libero per posizionare elementi ovunque!\n\nUsa "Elementi Solo per Questa Pagina" per aggiungere contenuti.');
             }
         }
         
@@ -2518,26 +2518,25 @@ Data: ${new Date().toLocaleDateString('it-IT')}
             var page = getCurrentPage();
             
             var isBlankMode = page && page.layoutMode === 'blank';
-            
+
+            // L'header è SEMPRE visibile (è globale!), anche in modalità blank
             var headerHTML = '';
-            if (!isBlankMode) {
-                headerHTML = '<header style="padding:40px 20px;border-bottom:2px solid ' + data.accentColor + ';background:' + data.primaryColor + ';position:relative;min-height:' + data.headerHeight + 'px">';
-                data.header.elements.forEach(function(el) {
-                    if (!el.visible) return;
-                    var selected = el.id === selectedHeaderId ? 'border:2px solid #ff6b6b' : 'border:2px dashed transparent';
-                    if (el.type === 'text') {
-                        headerHTML += '<div class="header-item" data-id="' + el.id + '" style="position:absolute;left:' + el.x + 'px;top:' + el.y + 'px;font-size:' + el.fontSize + 'px;color:' + el.color + ';cursor:move;padding:5px;' + selected + ';font-weight:' + (el.isTitle ? 'bold' : 'normal') + '">' + el.text + '</div>';
-                    } else if (el.type === 'menu') {
-                        headerHTML += '<div class="header-item" data-id="' + el.id + '" style="position:absolute;left:' + el.x + 'px;top:' + el.y + 'px;font-size:' + el.fontSize + 'px;color:' + el.color + ';cursor:move;padding:5px;' + selected + '">' + el.text + '</div>';
-                    } else if (el.type === 'dropdown') {
-                        var itemCount = el.items ? el.items.length : 0;
-                        headerHTML += '<div class="header-item" data-id="' + el.id + '" style="position:absolute;left:' + el.x + 'px;top:' + el.y + 'px;font-size:' + el.fontSize + 'px;color:' + el.color + ';cursor:move;padding:5px;' + selected + '">' + el.text + ' ▼ (' + itemCount + ')</div>';
-                    } else if (el.type === 'image' || el.type === 'imageLink') {
-                        headerHTML += '<div class="header-item" data-id="' + el.id + '" style="position:absolute;left:' + el.x + 'px;top:' + el.y + 'px;cursor:move;padding:5px;' + selected + '"><img src="' + el.src + '" style="width:' + el.width + 'px;height:' + el.height + 'px;object-fit:cover;pointer-events:none"></div>';
-                    }
-                });
-                headerHTML += '</header>';
-            }
+            headerHTML = '<header style="padding:40px 20px;border-bottom:3px solid ' + data.accentColor + ';background:' + data.primaryColor + ';position:relative;min-height:' + data.headerHeight + 'px;box-shadow:0 2px 8px rgba(0,0,0,0.2)">';
+            data.header.elements.forEach(function(el) {
+                if (!el.visible) return;
+                var selected = el.id === selectedHeaderId ? 'border:2px solid #ff6b6b' : 'border:2px dashed transparent';
+                if (el.type === 'text') {
+                    headerHTML += '<div class="header-item" data-id="' + el.id + '" style="position:absolute;left:' + el.x + 'px;top:' + el.y + 'px;font-size:' + el.fontSize + 'px;color:' + el.color + ';cursor:move;padding:5px;' + selected + ';font-weight:' + (el.isTitle ? 'bold' : 'normal') + '">' + el.text + '</div>';
+                } else if (el.type === 'menu') {
+                    headerHTML += '<div class="header-item" data-id="' + el.id + '" style="position:absolute;left:' + el.x + 'px;top:' + el.y + 'px;font-size:' + el.fontSize + 'px;color:' + el.color + ';cursor:move;padding:5px;' + selected + '">' + el.text + '</div>';
+                } else if (el.type === 'dropdown') {
+                    var itemCount = el.items ? el.items.length : 0;
+                    headerHTML += '<div class="header-item" data-id="' + el.id + '" style="position:absolute;left:' + el.x + 'px;top:' + el.y + 'px;font-size:' + el.fontSize + 'px;color:' + el.color + ';cursor:move;padding:5px;' + selected + '">' + el.text + ' ▼ (' + itemCount + ')</div>';
+                } else if (el.type === 'image' || el.type === 'imageLink') {
+                    headerHTML += '<div class="header-item" data-id="' + el.id + '" style="position:absolute;left:' + el.x + 'px;top:' + el.y + 'px;cursor:move;padding:5px;' + selected + '"><img src="' + el.src + '" style="width:' + el.width + 'px;height:' + el.height + 'px;object-fit:cover;pointer-events:none"></div>';
+                }
+            });
+            headerHTML += '</header>';
             
             var pageHTML = '';
             if (page) {
@@ -2564,10 +2563,12 @@ Data: ${new Date().toLocaleDateString('it-IT')}
                 
                 if (isBlankMode) {
                     // Modalità vuota: canvas a schermo intero senza titolo
-                    pageHTML = '<div class="canvas" style="position:relative;height:' + page.height + 'px;width:100vw;' + bgStyle + '">' + itemsHTML + '</div>';
+                    // Colore canvas diverso dall'header per distinguerli visivamente
+                    var canvasBg = bgStyle || 'background:rgba(255,255,255,0.03)';
+                    pageHTML = '<div class="canvas" style="position:relative;height:' + page.height + 'px;width:100vw;' + canvasBg + ';border-top:1px solid rgba(255,255,255,0.1)">' + itemsHTML + '</div>';
                 } else {
                     // Modalità normale: con container e titolo
-                    pageHTML = '<div class="container"><h2 style="color:' + data.accentColor + ';margin:40px 0 20px">' + page.name + '</h2><div class="canvas" style="position:relative;height:' + page.height + 'px;background:rgba(255,255,255,0.05);border-radius:8px;overflow:hidden;' + bgStyle + '">' + itemsHTML + '</div></div>';
+                    pageHTML = '<div class="container"><h2 style="color:' + data.accentColor + ';margin:40px 0 20px">' + page.name + '</h2><div class="canvas" style="position:relative;height:' + page.height + 'px;background:rgba(255,255,255,0.05);border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,0.1);' + bgStyle + '">' + itemsHTML + '</div></div>';
                 }
             }
 
