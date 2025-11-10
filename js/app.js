@@ -2146,7 +2146,22 @@ Data: ${new Date().toLocaleDateString('it-IT')}
 
             // L'header è SEMPRE visibile (è globale!), anche in modalità blank
             var headerHTML = '';
-            headerHTML = '<header style="padding:40px 20px;border-bottom:3px solid ' + data.accentColor + ';background:' + data.primaryColor + ';position:relative;min-height:' + data.headerHeight + 'px;box-shadow:0 2px 8px rgba(0,0,0,0.2)">';
+
+            // Calcola l'altezza dinamica dell'header in base agli elementi
+            // Questo previene che gli elementi si "blocchino" quando spostati in basso
+            var calculatedHeight = data.headerHeight; // Altezza minima di default
+            data.header.elements.forEach(function(el) {
+                if (!el.visible) return;
+                var elementBottom = el.y;
+                if (el.type === 'text' || el.type === 'menu' || el.type === 'dropdown') {
+                    elementBottom += el.fontSize + 20; // fontSize + padding
+                } else if (el.type === 'image' || el.type === 'imageLink') {
+                    elementBottom += el.height + 10; // height + padding
+                }
+                calculatedHeight = Math.max(calculatedHeight, elementBottom + 40); // +40 per padding bottom
+            });
+
+            headerHTML = '<header style="padding:40px 20px;border-bottom:3px solid ' + data.accentColor + ';background:' + data.primaryColor + ';position:relative;min-height:' + calculatedHeight + 'px;overflow:visible;box-shadow:0 2px 8px rgba(0,0,0,0.2)">';
             data.header.elements.forEach(function(el) {
                 if (!el.visible) return;
                 var selected = el.id === selectedHeaderId ? 'border:2px solid #ff6b6b' : 'border:2px dashed transparent';

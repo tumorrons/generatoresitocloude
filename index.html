@@ -54,9 +54,10 @@
                 <div id="header" class="section">
                     <h4 style="margin-bottom: 15px;">Header del Sito</h4>
                     <div class="info-panel">
-                        <strong>🎯 Header</strong><br>
-                        Aggiungi elementi all'header: testo, menu, logo.<br>
-                        L'header apparirà su tutte le pagine del sito.
+                        <strong>🎯 Header Globale</strong><br>
+                        Elementi che appaiono su <strong>TUTTE</strong> le pagine del sito (logo, menu principale, ecc.).<br>
+                        Puoi spostarli liberamente - l'header si espande automaticamente.<br>
+                        <em style="color:#666;font-size:0.85em">💡 Per elementi specifici di una pagina, usa la sezione "Elementi Solo per Questa Pagina" nell'Editor.</em>
                     </div>
                     
                     <div id="headerList"></div>
@@ -121,7 +122,7 @@
                         
                         <div class="slider-group">
                             <label>Posizione Y: <span id="headerEditYValue">80</span>px</label>
-                            <input type="range" min="0" max="400" value="80" id="headerEditY" oninput="document.getElementById('headerEditYValue').textContent=this.value" />
+                            <input type="range" min="0" max="800" value="80" id="headerEditY" oninput="document.getElementById('headerEditYValue').textContent=this.value" />
                         </div>
                         
                         <div class="slider-group" id="headerFontSizeGroup">
@@ -183,8 +184,9 @@
                         <button class="button-primary" style="background: #2196F3;" onclick="addTextBox()">+ Aggiungi Testo</button>
                         
                         <div style="margin: 20px 0; padding: 15px; background: #e3f2fd; border-radius: 8px; border-left: 4px solid #2196F3;">
-                            <h4 style="margin-bottom: 10px; color: #1976d2;">📌 Elementi Solo per Questa Pagina</h4>
-                            <p style="font-size: 0.9em; color: #555; margin-bottom: 15px;">Questi elementi appariranno SOLO in questa pagina (non globali come l'header)</p>
+                            <h4 style="margin-bottom: 10px; color: #1976d2;">📌 Elementi Locali (Solo Questa Pagina)</h4>
+                            <p style="font-size: 0.9em; color: #555; margin-bottom: 15px;">Questi elementi appaiono <strong>SOLO in questa pagina</strong>, non su tutte come l'header.<br>
+                            <em style="color:#666;font-size:0.85em">💡 Puoi aggiungere anche menu e dropdown qui se li vuoi solo su questa pagina!</em></p>
                             
                             <div id="pageElementsList" style="margin-bottom: 15px;"></div>
                             
