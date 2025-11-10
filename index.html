@@ -69,10 +69,10 @@
                     <button class="btn-export" onclick="exportSite()">📦 Esporta ZIP</button>
                 </div>
                 <div class="tabs">
-                    <button class="tab active" onclick="switchTab('structure')">📋 Struttura</button>
-                    <button class="tab" onclick="switchTab('header')">🎯 Header</button>
-                    <button class="tab" onclick="switchTab('editor')">🎨 Editor</button>
-                    <button class="tab" onclick="switchTab('settings')">⚙️ Impostazioni</button>
+                    <button class="tab active" onclick="switchTab('structure', event)">📋 Struttura</button>
+                    <button class="tab" onclick="switchTab('header', event)">🎯 Header</button>
+                    <button class="tab" onclick="switchTab('editor', event)">🎨 Editor</button>
+                    <button class="tab" onclick="switchTab('settings', event)">⚙️ Impostazioni</button>
                 </div>
             </div>
 
@@ -502,14 +502,33 @@
 
         // ===== EXPORT MULTIPAGE CON ZIP =====
         async function exportSite() {
+            // Validazione pre-export
+            if (data.pages.length === 0) {
+                alert('⚠️ Impossibile esportare!\n\nNon ci sono pagine nel progetto.\nAggiungi almeno una pagina prima di esportare.');
+                return;
+            }
+
+            // Verifica che ci sia almeno una pagina visibile
+            var hasVisiblePage = data.pages.some(function(page) {
+                if (page.type === 'gallery') {
+                    return page.subPages && page.subPages.some(function(sub) { return sub.visible; });
+                }
+                return page.visible;
+            });
+
+            if (!hasVisiblePage) {
+                alert('⚠️ Impossibile esportare!\n\nTutte le pagine sono nascoste.\nRendi visibile almeno una pagina prima di esportare.');
+                return;
+            }
+
             var progressDiv = document.getElementById('exportProgress');
             var progressBar = document.getElementById('progressBar');
             var progressFill = document.getElementById('progressFill');
-            
+
             progressDiv.style.display = 'block';
             progressBar.style.display = 'block';
             updateProgress(0, 'Preparazione...');
-            
+
             try {
                 var zip = new JSZip();
                 imageCounter = 0;
@@ -635,8 +654,16 @@
                 
             } catch (error) {
                 console.error('Errore export:', error);
-                alert('❌ Errore durante l\'export: ' + error.message);
+                var errorMsg = '❌ Errore durante l\'export!\n\n';
+                errorMsg += 'Dettagli: ' + error.message + '\n\n';
+                errorMsg += 'Suggerimenti:\n';
+                errorMsg += '• Verifica che tutte le immagini siano caricate correttamente\n';
+                errorMsg += '• Prova a ridurre il numero di immagini o la loro dimensione\n';
+                errorMsg += '• Salva il progetto e riprova\n\n';
+                errorMsg += 'Se il problema persiste, controlla la console del browser (F12).';
+                alert(errorMsg);
                 progressDiv.style.display = 'none';
+                progressBar.style.display = 'none';
             }
         }
         
@@ -1087,7 +1114,44 @@ img {
             }
             return null;
         }
-        
+
+        // Funzione helper riutilizzabile per selezionare una pagina tramite prompt
+        function selectPageByPrompt(promptMessage) {
+            if (data.pages.length === 0) {
+                alert('Nessuna pagina disponibile! Crea prima delle pagine.');
+                return null;
+            }
+
+            var pagesList = promptMessage || 'Scegli la pagina:\n\n';
+            var pageIndex = 1;
+            var pagesMap = []; // Mappa indice -> pageId
+
+            data.pages.forEach(function(p) {
+                if (p.type === 'normal') {
+                    pagesList += pageIndex + '. ' + p.name + '\n';
+                    pagesMap.push(p.id);
+                    pageIndex++;
+                } else if (p.type === 'gallery' && p.subPages) {
+                    p.subPages.forEach(function(sub) {
+                        pagesList += pageIndex + '. ' + p.name + ' → ' + sub.name + '\n';
+                        pagesMap.push(sub.id);
+                        pageIndex++;
+                    });
+                }
+            });
+
+            var choice = prompt(pagesList + '\nInserisci il numero:');
+            if (!choice) return null;
+
+            var choiceNum = parseInt(choice);
+            if (isNaN(choiceNum) || choiceNum < 1 || choiceNum > pagesMap.length) {
+                alert('Numero non valido!');
+                return null;
+            }
+
+            return pagesMap[choiceNum - 1]; // Ritorna il page ID
+        }
+
         function generateReadme() {
             return `${data.siteName}
 Creato con Photo Site Builder Pro
@@ -1120,11 +1184,11 @@ Data: ${new Date().toLocaleDateString('it-IT')}
         }
 
         // ===== TAB SWITCHING =====
-        function switchTab(tab) {
+        function switchTab(tab, e) {
             document.querySelectorAll('.section').forEach(function(s) { s.classList.remove('active'); });
             document.getElementById(tab).classList.add('active');
             document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
-            event.target.classList.add('active');
+            if (e && e.target) e.target.classList.add('active');
             
             if (tab === 'structure') renderPagesList();
             if (tab === 'header') renderHeaderList();
@@ -1410,17 +1474,17 @@ Data: ${new Date().toLocaleDateString('it-IT')}
         function addHeaderImage(e) {
             var file = e.target.files[0];
             if (!file) return;
-            
+
             var imageName = prompt('Dai un nome a questa immagine (es: "Logo", "Banner"):', 'Logo');
             if (!imageName) imageName = 'Immagine ' + nextHeaderId;
-            
-            var reader = new FileReader();
-            reader.onload = function(ev) {
+
+            // Ottimizza l'immagine
+            optimizeImage(file, 1920, 1920, 0.85, function(optimizedSrc) {
                 data.header.elements.push({
                     id: nextHeaderId++,
                     type: 'image',
                     name: imageName,
-                    src: ev.target.result,
+                    src: optimizedSrc,
                     x: 50,
                     y: 50,
                     width: 100,
@@ -1430,27 +1494,26 @@ Data: ${new Date().toLocaleDateString('it-IT')}
                 renderHeaderList();
                 updatePreview();
                 updateTotalProjectSize();
-            };
-            reader.readAsDataURL(file);
+            });
             e.target.value = '';
         }
 
         function addHeaderImageWithLink(e) {
             var file = e.target.files[0];
             if (!file) return;
-            
+
             var imageName = prompt('Dai un nome a questa immagine con link (es: "Logo Home", "Banner Prodotti"):', 'Logo Link');
             if (!imageName) imageName = 'Immagine Link ' + nextHeaderId;
-            
+
             var linkType = confirm('Collegare a una pagina interna?\n\nOK = Pagina interna\nAnnulla = Link esterno') ? 'page' : 'external';
-            
-            var reader = new FileReader();
-            reader.onload = function(ev) {
+
+            // Ottimizza l'immagine
+            optimizeImage(file, 1920, 1920, 0.85, function(optimizedSrc) {
                 var newEl = {
                     id: nextHeaderId++,
                     type: 'imageLink',
                     name: imageName,
-                    src: ev.target.result,
+                    src: optimizedSrc,
                     x: 50,
                     y: 50,
                     width: 100,
@@ -1458,7 +1521,7 @@ Data: ${new Date().toLocaleDateString('it-IT')}
                     visible: true,
                     linkType: linkType
                 };
-                
+
                 if (linkType === 'page' && data.pages.length > 0) {
                     newEl.linkPageId = data.pages[0].id;
                 } else if (linkType === 'external') {
@@ -1466,13 +1529,12 @@ Data: ${new Date().toLocaleDateString('it-IT')}
                     if (!url) return;
                     newEl.externalUrl = url.match(/^https?:\/\//) ? url : 'https://' + url;
                 }
-                
+
                 data.header.elements.push(newEl);
                 renderHeaderList();
                 updatePreview();
                 updateTotalProjectSize();
-            };
-            reader.readAsDataURL(file);
+            });
             e.target.value = '';
         }
 
@@ -1497,63 +1559,9 @@ Data: ${new Date().toLocaleDateString('it-IT')}
             };
             
             if (linkType === 'page') {
-                // Mostra lista pagine per scegliere
-                if (data.pages.length === 0) {
-                    alert('Nessuna pagina disponibile! Crea prima delle pagine.');
-                    return;
-                }
-                
-                var pagesList = '';
-                var pageIndex = 1;
-                data.pages.forEach(function(p) {
-                    if (p.type === 'normal') {
-                        pagesList += pageIndex + '. ' + p.name + '\n';
-                        pageIndex++;
-                    } else if (p.type === 'gallery' && p.subPages) {
-                        p.subPages.forEach(function(sub) {
-                            pagesList += pageIndex + '. ' + p.name + ' → ' + sub.name + '\n';
-                            pageIndex++;
-                        });
-                    }
-                });
-                
-                var choice = prompt('Scegli la pagina da collegare:\n\n' + pagesList + '\nInserisci il numero:');
-                if (!choice) return;
-                
-                var choiceNum = parseInt(choice);
-                if (isNaN(choiceNum) || choiceNum < 1 || choiceNum >= pageIndex) {
-                    alert('Numero non valido!');
-                    return;
-                }
-                
-                // Trova la pagina corrispondente
-                var currentIndex = 1;
-                var selectedPageId = null;
-                
-                for (var i = 0; i < data.pages.length; i++) {
-                    if (data.pages[i].type === 'normal') {
-                        if (currentIndex === choiceNum) {
-                            selectedPageId = data.pages[i].id;
-                            break;
-                        }
-                        currentIndex++;
-                    } else if (data.pages[i].type === 'gallery' && data.pages[i].subPages) {
-                        for (var j = 0; j < data.pages[i].subPages.length; j++) {
-                            if (currentIndex === choiceNum) {
-                                selectedPageId = data.pages[i].subPages[j].id;
-                                break;
-                            }
-                            currentIndex++;
-                        }
-                        if (selectedPageId) break;
-                    }
-                }
-                
-                if (!selectedPageId) {
-                    alert('Errore nella selezione della pagina');
-                    return;
-                }
-                
+                // Usa la funzione helper per selezionare la pagina
+                var selectedPageId = selectPageByPrompt('Scegli la pagina da collegare:\n\n');
+                if (!selectedPageId) return;
                 newItem.linkPageId = selectedPageId;
             } else if (linkType === 'external') {
                 var url = prompt('URL (es: https://esempio.com):');
@@ -1599,53 +1607,8 @@ Data: ${new Date().toLocaleDateString('it-IT')}
             var item = el.items[index];
             
             if (item.linkType === 'page') {
-                // Mostra lista pagine per cambiare link
-                var pagesList = '';
-                var pageIndex = 1;
-                data.pages.forEach(function(p) {
-                    if (p.type === 'normal') {
-                        pagesList += pageIndex + '. ' + p.name + '\n';
-                        pageIndex++;
-                    } else if (p.type === 'gallery' && p.subPages) {
-                        p.subPages.forEach(function(sub) {
-                            pagesList += pageIndex + '. ' + p.name + ' → ' + sub.name + '\n';
-                            pageIndex++;
-                        });
-                    }
-                });
-                
-                var choice = prompt('Cambia pagina collegata a "' + item.text + '":\n\n' + pagesList + '\nInserisci il numero:');
-                if (!choice) return;
-                
-                var choiceNum = parseInt(choice);
-                if (isNaN(choiceNum) || choiceNum < 1 || choiceNum >= pageIndex) {
-                    alert('Numero non valido!');
-                    return;
-                }
-                
-                // Trova la pagina corrispondente
-                var currentIndex = 1;
-                var selectedPageId = null;
-                
-                for (var i = 0; i < data.pages.length; i++) {
-                    if (data.pages[i].type === 'normal') {
-                        if (currentIndex === choiceNum) {
-                            selectedPageId = data.pages[i].id;
-                            break;
-                        }
-                        currentIndex++;
-                    } else if (data.pages[i].type === 'gallery' && data.pages[i].subPages) {
-                        for (var j = 0; j < data.pages[i].subPages.length; j++) {
-                            if (currentIndex === choiceNum) {
-                                selectedPageId = data.pages[i].subPages[j].id;
-                                break;
-                            }
-                            currentIndex++;
-                        }
-                        if (selectedPageId) break;
-                    }
-                }
-                
+                // Usa la funzione helper per selezionare la pagina
+                var selectedPageId = selectPageByPrompt('Cambia pagina collegata a "' + item.text + '":\n\n');
                 if (selectedPageId) {
                     item.linkPageId = selectedPageId;
                     renderDropdownItems();
@@ -1845,18 +1808,58 @@ Data: ${new Date().toLocaleDateString('it-IT')}
             updatePreview();
         }
 
-        // ===== EDITOR CONTENUTI (identico all'originale) =====
+        // ===== EDITOR CONTENUTI =====
+
+        // Funzione helper per ottimizzare immagini
+        function optimizeImage(file, maxWidth, maxHeight, quality, callback) {
+            // Validazione dimensione file (max 10MB)
+            var maxFileSize = 10 * 1024 * 1024; // 10MB
+            if (file.size > maxFileSize) {
+                alert('⚠️ Immagine troppo grande: ' + file.name + '\nDimensione: ' + (file.size / 1024 / 1024).toFixed(2) + ' MB\nMassimo consentito: 10 MB');
+                return;
+            }
+
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var img = new Image();
+                img.onload = function() {
+                    var canvas = document.createElement('canvas');
+                    var ctx = canvas.getContext('2d');
+
+                    var width = img.width;
+                    var height = img.height;
+
+                    // Ridimensiona solo se supera i limiti
+                    if (width > maxWidth || height > maxHeight) {
+                        var ratio = Math.min(maxWidth / width, maxHeight / height);
+                        width = Math.floor(width * ratio);
+                        height = Math.floor(height * ratio);
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    // Converti in base64 con qualità specificata
+                    var optimizedData = canvas.toDataURL('image/jpeg', quality);
+                    callback(optimizedData);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
         function addPhoto(e) {
             var page = getCurrentPage();
             if (!page) return alert('Seleziona prima una pagina');
-            
+
             Array.from(e.target.files).forEach(function(file) {
-                var reader = new FileReader();
-                reader.onload = function(ev) {
+                // Ottimizza l'immagine prima di aggiungerla
+                optimizeImage(file, 1920, 1920, 0.85, function(optimizedSrc) {
                     page.items.push({
                         id: nextItemId++,
                         type: 'image',
-                        src: ev.target.result,
+                        src: optimizedSrc,
                         x: 50,
                         y: 50,
                         width: 200,
@@ -1868,8 +1871,7 @@ Data: ${new Date().toLocaleDateString('it-IT')}
                     });
                     updatePreview();
                     updatePageSizeInfo();
-                };
-                reader.readAsDataURL(file);
+                });
             });
             e.target.value = '';
         }
@@ -1896,14 +1898,13 @@ Data: ${new Date().toLocaleDateString('it-IT')}
             if (!page) return alert('Seleziona prima una pagina');
             var file = e.target.files[0];
             if (!file) return;
-            
-            var reader = new FileReader();
-            reader.onload = function(ev) {
-                page.backgroundImage = ev.target.result;
+
+            // Ottimizza l'immagine di sfondo
+            optimizeImage(file, 1920, 1920, 0.85, function(optimizedSrc) {
+                page.backgroundImage = optimizedSrc;
                 updatePreview();
                 updatePageSizeInfo();
-            };
-            reader.readAsDataURL(file);
+            });
             e.target.value = '';
         }
         
@@ -1968,13 +1969,13 @@ Data: ${new Date().toLocaleDateString('it-IT')}
             if (!page) return alert('Seleziona prima una pagina');
             var file = e.target.files[0];
             if (!file) return;
-            
-            var reader = new FileReader();
-            reader.onload = function(ev) {
+
+            // Ottimizza l'immagine
+            optimizeImage(file, 1920, 1920, 0.85, function(optimizedSrc) {
                 page.items.push({
                     id: nextItemId++,
                     type: 'freeimage',
-                    src: ev.target.result,
+                    src: optimizedSrc,
                     x: 50,
                     y: 50,
                     width: 150,
@@ -1982,8 +1983,7 @@ Data: ${new Date().toLocaleDateString('it-IT')}
                 });
                 updatePreview();
                 updatePageSizeInfo();
-            };
-            reader.readAsDataURL(file);
+            });
             e.target.value = '';
         }
         
@@ -2136,89 +2136,45 @@ Data: ${new Date().toLocaleDateString('it-IT')}
         function addPageImageLinkElement(e) {
             var page = getCurrentPage();
             if (!page) return alert('Seleziona prima una pagina');
-            
+
             var file = e.target.files[0];
             if (!file) return;
-            
+
             var imageName = prompt('Nome per questa immagine (es: "Mappa Google", "Logo Partner"):', 'Immagine Link');
             if (!imageName) imageName = 'Immagine Link ' + nextItemId;
-            
+
             var linkType = confirm('Collegare a una pagina interna?\n\nOK = Pagina interna\nAnnulla = Link esterno') ? 'page' : 'external';
-            
-            var reader = new FileReader();
-            reader.onload = function(ev) {
+
+            // Ottimizza l'immagine
+            optimizeImage(file, 1920, 1920, 0.85, function(optimizedSrc) {
                 var newItem = {
                     id: nextItemId++,
                     type: 'pageimagelink',
                     name: imageName,
-                    src: ev.target.result,
+                    src: optimizedSrc,
                     x: 50,
                     y: 50,
                     width: 150,
                     height: 150,
                     linkType: linkType
                 };
-                
-                if (linkType === 'page' && data.pages.length > 0) {
-                    // Mostra lista pagine per scegliere
-                    var pagesList = 'Scegli la pagina da collegare:\n\n';
-                    var pageIndex = 1;
-                    data.pages.forEach(function(p) {
-                        if (p.type === 'normal') {
-                            pagesList += pageIndex + '. ' + p.name + '\n';
-                            pageIndex++;
-                        } else if (p.type === 'gallery' && p.subPages) {
-                            p.subPages.forEach(function(sub) {
-                                pagesList += pageIndex + '. ' + p.name + ' → ' + sub.name + '\n';
-                                pageIndex++;
-                            });
-                        }
-                    });
-                    
-                    var choice = prompt(pagesList + '\nInserisci il numero:');
-                    if (!choice) return;
-                    
-                    var choiceNum = parseInt(choice);
-                    var currentIndex = 1;
-                    var selectedPageId = null;
-                    
-                    for (var i = 0; i < data.pages.length; i++) {
-                        if (data.pages[i].type === 'normal') {
-                            if (currentIndex === choiceNum) {
-                                selectedPageId = data.pages[i].id;
-                                break;
-                            }
-                            currentIndex++;
-                        } else if (data.pages[i].type === 'gallery' && data.pages[i].subPages) {
-                            for (var j = 0; j < data.pages[i].subPages.length; j++) {
-                                if (currentIndex === choiceNum) {
-                                    selectedPageId = data.pages[i].subPages[j].id;
-                                    break;
-                                }
-                                currentIndex++;
-                            }
-                            if (selectedPageId) break;
-                        }
-                    }
-                    
-                    if (!selectedPageId) {
-                        alert('Selezione non valida');
-                        return;
-                    }
-                    
+
+                if (linkType === 'page') {
+                    // Usa la funzione helper per selezionare la pagina
+                    var selectedPageId = selectPageByPrompt('Scegli la pagina da collegare:\n\n');
+                    if (!selectedPageId) return;
                     newItem.linkPageId = selectedPageId;
                 } else if (linkType === 'external') {
                     var url = prompt('URL (es: https://maps.google.com o https://esempio.com):');
                     if (!url) return;
                     newItem.externalUrl = url.match(/^https?:\/\//) ? url : 'https://' + url;
                 }
-                
+
                 page.items.push(newItem);
                 renderPageElementsList();
                 updatePreview();
                 updatePageSizeInfo();
-            };
-            reader.readAsDataURL(file);
+            });
             e.target.value = '';
         }
         
@@ -2336,13 +2292,27 @@ Data: ${new Date().toLocaleDateString('it-IT')}
             
             var sizeKB = (totalSize / 1024).toFixed(2);
             var sizeMB = (totalSize / (1024 * 1024)).toFixed(2);
-            
+
             var sizeText = totalSize > 1048576 ? sizeMB + ' MB' : sizeKB + ' KB';
-            var colorClass = totalSize > 52428800 ? 'color:#ff6b6b' : 'color:#4CAF50'; // 50MB limit
-            
-            document.getElementById('totalProjectSize').innerHTML = 
+
+            // Definisci colori e warning in base alla dimensione
+            var colorClass = 'color:#4CAF50'; // Verde: tutto ok
+            var warningText = '';
+
+            if (totalSize > 104857600) { // > 100MB
+                colorClass = 'color:#d32f2f'; // Rosso scuro: troppo grande
+                warningText = '<br><span style="color:#d32f2f;font-size:0.9em">⛔ TROPPO GRANDE! GitHub ha un limite di 100MB per file.</span>';
+            } else if (totalSize > 52428800) { // > 50MB
+                colorClass = 'color:#ff6b6b'; // Rosso: attenzione
+                warningText = '<br><span style="color:#ff6b6b;font-size:0.9em">⚠️ Attenzione: si consiglia di rimanere sotto i 50MB</span>';
+            } else if (totalSize > 26214400) { // > 25MB
+                colorClass = 'color:#ff9800'; // Arancione: moderato
+                warningText = '<br><span style="color:#ff9800;font-size:0.9em">💡 Suggerimento: considera di ridurre le immagini</span>';
+            }
+
+            document.getElementById('totalProjectSize').innerHTML =
                 'Totale stimato: <strong style="' + colorClass + '">' + sizeText + '</strong><br>' +
-                'Immagini totali: <strong>' + totalImages + '</strong>';
+                'Immagini totali: <strong>' + totalImages + '</strong>' + warningText;
         }
         
         function estimateBase64Size(base64String) {
